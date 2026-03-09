@@ -12,3 +12,6 @@ Chaque fichier répond à 3 questions :
 | # | Décision |
 |---|----------|
 | 001 | [Multi-tenant strategy](001-multi-tenant-strategy.md) |
+| 002 | [Spring Boot 3 + Java 17](002-spring-boot-choix.md) |
+| 003 | [JWT via HttpOnly Cookies](003-jwt-httponly-cookies.md) |
+
