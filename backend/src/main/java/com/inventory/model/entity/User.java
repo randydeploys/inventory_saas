@@ -8,6 +8,10 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
+
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -42,11 +46,13 @@ public class User {
     private String lastName;
 
     @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(columnDefinition = "user_role", nullable = false)
     private Role role;
 
+    @Builder.Default
     @Column(name = "is_active", nullable = false)
-    private boolean isActive = true;
+    private boolean active = true;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
