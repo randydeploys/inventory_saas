@@ -70,8 +70,15 @@ class RefreshTokenRepositoryTest {
         token.setRevoked(true);
         refreshTokenRepository.save(token);
 
-        Optional<RefreshToken> updated = refreshTokenRepository.findByTokenAndRevokedFalse("my-secret-token");
-        assertThat(updated).isPresent();
-        assertThat(updated.get().isRevoked()).isTrue();
+        // findByTokenAndRevokedFalse doit retourner vide car le token est maintenant révoqué
+        Optional<RefreshToken> shouldBeEmpty = refreshTokenRepository.findByTokenAndRevokedFalse("my-secret-token");
+        assertThat(shouldBeEmpty).isEmpty();
+
+        // Vérifier que le token existe bien en base avec revoked=true
+        RefreshToken persisted = refreshTokenRepository.findAll().stream()
+                .filter(t -> "my-secret-token".equals(t.getToken()))
+                .findFirst()
+                .orElseThrow();
+        assertThat(persisted.isRevoked()).isTrue();
     }
 }
