@@ -11,6 +11,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -44,7 +45,7 @@ class BuildingRepositoryTest {
         buildingRepository.save(Building.builder()
                 .tenant(tenant)
                 .name("Entrepôt Archivé")
-                .deletedAt(LocalDateTime.now()) // Soft delete
+                .deletedAt(Instant.now()) // Soft delete
                 .build());
     }
 

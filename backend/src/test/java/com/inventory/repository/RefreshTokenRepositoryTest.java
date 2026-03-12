@@ -13,6 +13,8 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
@@ -51,24 +53,24 @@ class RefreshTokenRepositoryTest {
         refreshTokenRepository.save(RefreshToken.builder()
                 .user(user)
                 .token("my-secret-token")
-                .expiresAt(LocalDateTime.now().plusDays(7))
+                .expiresAt(Instant.now().plus(Duration.ofDays(7)))
                 .build());
     }
 
     @Test
     void findByToken_returnsToken_whenExists() {
-        Optional<RefreshToken> result = refreshTokenRepository.findByToken("my-secret-token");
+        Optional<RefreshToken> result = refreshTokenRepository.findByTokenAndRevokedFalse("my-secret-token");
         assertThat(result).isPresent();
         assertThat(result.get().isRevoked()).isFalse();
     }
 
     @Test
     void revokeToken_persistsStateSuccessfully() {
-        RefreshToken token = refreshTokenRepository.findByToken("my-secret-token").orElseThrow();
+        RefreshToken token = refreshTokenRepository.findByTokenAndRevokedFalse("my-secret-token").orElseThrow();
         token.setRevoked(true);
         refreshTokenRepository.save(token);
 
-        Optional<RefreshToken> updated = refreshTokenRepository.findByToken("my-secret-token");
+        Optional<RefreshToken> updated = refreshTokenRepository.findByTokenAndRevokedFalse("my-secret-token");
         assertThat(updated).isPresent();
         assertThat(updated.get().isRevoked()).isTrue();
     }
