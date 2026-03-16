@@ -1,7 +1,6 @@
 package com.inventory.repository;
 
 import com.inventory.model.entity.Building;
-import com.inventory.model.entity.Tenant;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -12,12 +11,15 @@ import java.util.UUID;
 @Repository
 public interface BuildingRepository extends JpaRepository<Building, UUID> {
 
-    // Liste des bâtiments actifs
-    List<Building> findByTenantAndDeletedAtIsNull(Tenant tenant);
+    // Buildings actifs d'un tenant
+    List<Building> findByTenantIdAndDeletedAtIsNull(UUID tenantId);
 
-    // Liste des bâtiments archivés
-    List<Building> findByTenantAndDeletedAtIsNotNull(Tenant tenant);
+    // Buildings archivés d'un tenant
+    List<Building> findByTenantIdAndDeletedAtIsNotNull(UUID tenantId);
 
-    // Trouver un bâtiment actif précis pour ce tenant
-    Optional<Building> findByIdAndTenantAndDeletedAtIsNull(UUID id, Tenant tenant);
+    // Un building actif par id et tenant
+    Optional<Building> findByIdAndTenantIdAndDeletedAtIsNull(UUID id, UUID tenantId);
+
+    // Un building (actif ou archivé) par id et tenant
+    Optional<Building> findByIdAndTenantId(UUID id, UUID tenantId);
 }

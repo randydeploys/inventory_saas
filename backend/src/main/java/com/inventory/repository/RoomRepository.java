@@ -13,12 +13,12 @@ import java.util.UUID;
 @Repository
 public interface RoomRepository extends JpaRepository<Room, UUID> {
 
-    // Liste des zones actives d'un bâtiment spécifique
-    List<Room> findByTenantAndBuildingAndDeletedAtIsNull(Tenant tenant, Building building);
+ // Rooms actives d'un building
+    List<Room> findByBuildingIdAndTenantIdAndDeletedAtIsNull(UUID buildingId, UUID tenantId);
 
-    // Liste des zones archivées d'un bâtiment spécifique
-    List<Room> findByTenantAndBuildingAndDeletedAtIsNotNull(Tenant tenant, Building building);
+    // Rooms archivées d'un building
+    List<Room> findByBuildingIdAndTenantIdAndDeletedAtIsNotNull(UUID buildingId, UUID tenantId);
 
-    // Trouver une zone active précise
-    Optional<Room> findByIdAndTenantAndDeletedAtIsNull(UUID id, Tenant tenant);
+    // Une room active par id et tenant
+    Optional<Room> findByIdAndTenantIdAndDeletedAtIsNull(UUID id, UUID tenantId);
 }
