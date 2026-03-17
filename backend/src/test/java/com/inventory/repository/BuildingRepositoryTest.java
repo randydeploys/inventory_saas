@@ -51,14 +51,14 @@ class BuildingRepositoryTest {
 
     @Test
     void findByTenantAndDeletedAtIsNull_returnsOnlyActiveBuildings() {
-        List<Building> results = buildingRepository.findByTenantAndDeletedAtIsNull(tenant);
+        List<Building> results = buildingRepository.findByTenantIdAndDeletedAtIsNull(tenant.getId());
         assertThat(results).hasSize(1);
         assertThat(results.get(0).getName()).isEqualTo("Entrepôt Actif");
     }
 
     @Test
     void findByTenantAndDeletedAtIsNotNull_returnsOnlyArchivedBuildings() {
-        List<Building> results = buildingRepository.findByTenantAndDeletedAtIsNotNull(tenant);
+        List<Building> results = buildingRepository.findByTenantIdAndDeletedAtIsNotNull(tenant.getId());
         assertThat(results).hasSize(1);
         assertThat(results.get(0).getName()).isEqualTo("Entrepôt Archivé");
     }

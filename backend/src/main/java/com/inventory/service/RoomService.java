@@ -1,5 +1,6 @@
 package com.inventory.service;
 
+import com.inventory.exception.ResourceNotFoundException;
 import com.inventory.mapper.RoomMapper;
 import com.inventory.model.dto.RoomRequest;
 import com.inventory.model.dto.RoomResponse;
@@ -59,7 +60,7 @@ public class RoomService {
 
         Room room = roomRepository
                 .findByIdAndTenantIdAndDeletedAtIsNull(id, tenantId)
-                .orElseThrow(() -> new IllegalArgumentException("Zone introuvable"));
+                .orElseThrow(() -> new ResourceNotFoundException("Zone introuvable"));
 
         return RoomMapper.toResponse(room);
     }
@@ -71,10 +72,10 @@ public class RoomService {
         // Vérifier que le building existe, est actif, et appartient au tenant
         Building building = buildingRepository
                 .findByIdAndTenantIdAndDeletedAtIsNull(buildingId, tenantId)
-                .orElseThrow(() -> new IllegalArgumentException("Bâtiment introuvable"));
+                .orElseThrow(() -> new ResourceNotFoundException("Bâtiment introuvable"));
 
         Tenant tenant = tenantRepository.findById(tenantId)
-                .orElseThrow(() -> new IllegalArgumentException("Tenant introuvable"));
+                .orElseThrow(() -> new ResourceNotFoundException("Tenant introuvable"));
 
         Room room = RoomMapper.toEntity(request, building, tenant);
         User currentUser = userRepository.getReferenceById(securityHelper.getCurrentUserId());
@@ -90,7 +91,7 @@ public class RoomService {
 
         Room room = roomRepository
                 .findByIdAndTenantIdAndDeletedAtIsNull(id, tenantId)
-                .orElseThrow(() -> new IllegalArgumentException("Zone introuvable"));
+.orElseThrow(() -> new ResourceNotFoundException("Zone introuvable"));
 
         RoomMapper.updateEntity(room, request);
         User currentUser = userRepository.getReferenceById(securityHelper.getCurrentUserId());
@@ -106,7 +107,7 @@ public class RoomService {
 
         Room room = roomRepository
                 .findByIdAndTenantIdAndDeletedAtIsNull(id, tenantId)
-                .orElseThrow(() -> new IllegalArgumentException("Zone introuvable"));
+                .orElseThrow(() -> new ResourceNotFoundException("Zone introuvable"));
 
         // TODO: vérifier si des produits actifs existent (quand ProductStock sera créé)
 

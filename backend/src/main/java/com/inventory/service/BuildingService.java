@@ -1,5 +1,6 @@
 package com.inventory.service;
 
+import com.inventory.exception.ResourceNotFoundException;
 import com.inventory.mapper.BuildingMapper;
 import com.inventory.model.dto.BuildingRequest;
 import com.inventory.model.dto.BuildingResponse;
@@ -54,7 +55,7 @@ public class BuildingService {
 
         Building building = buildingRepository
                 .findByIdAndTenantIdAndDeletedAtIsNull(id, tenantId)
-                .orElseThrow(() -> new IllegalArgumentException("Bâtiment introuvable"));
+                .orElseThrow(() -> new ResourceNotFoundException("Bâtiment introuvable"));
 
         return BuildingMapper.toResponse(building);
     }
@@ -64,7 +65,7 @@ public class BuildingService {
         UUID tenantId = securityHelper.getCurrentTenantId();
 
         Tenant tenant = tenantRepository.findById(tenantId)
-                .orElseThrow(() -> new IllegalArgumentException("Tenant introuvable"));
+                .orElseThrow(() -> new ResourceNotFoundException("Tenant introuvable"));
 
         Building building = BuildingMapper.toEntity(request, tenant);
         User currentUser = userRepository.getReferenceById(securityHelper.getCurrentUserId());
@@ -80,7 +81,7 @@ public class BuildingService {
 
         Building building = buildingRepository
                 .findByIdAndTenantIdAndDeletedAtIsNull(id, tenantId)
-                .orElseThrow(() -> new IllegalArgumentException("Bâtiment introuvable"));
+.orElseThrow(() -> new ResourceNotFoundException("Bâtiment introuvable"));
 
         BuildingMapper.updateEntity(building, request);
         User currentUser = userRepository.getReferenceById(securityHelper.getCurrentUserId());
@@ -96,7 +97,7 @@ public class BuildingService {
 
         Building building = buildingRepository
                 .findByIdAndTenantIdAndDeletedAtIsNull(id, tenantId)
-                .orElseThrow(() -> new IllegalArgumentException("Bâtiment introuvable"));
+.orElseThrow(() -> new ResourceNotFoundException("Bâtiment introuvable"));
 
         building.setDeletedAt(Instant.now());
         buildingRepository.save(building);
