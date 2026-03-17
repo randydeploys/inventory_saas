@@ -17,6 +17,18 @@ import java.util.List;
 @Slf4j
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(ResourceNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ApiResponse<Void> handleNotFound(ResourceNotFoundException ex) {
+        return ApiResponse.error(ex.getMessage());
+    }
+
+    @ExceptionHandler(ConflictException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiResponse<Void> handleConflict(ConflictException ex) {
+        return ApiResponse.error(ex.getMessage());
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ApiResponse<Void> handleIllegalArgument(IllegalArgumentException ex) {
@@ -26,12 +38,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ApiResponse<Void> handleValidation(MethodArgumentNotValidException ex) {
-        // Extraire les erreurs champ par champ
         List<String> errors = ex.getBindingResult().getFieldErrors().stream()
                 .map(field -> field.getField() + " : " + field.getDefaultMessage())
                 .toList();
-        // Exemple de résultat : ["email : doit être un email valide", "password : ne doit pas être vide"]
-
         return ApiResponse.error("Erreur de validation", errors);
     }
 
@@ -41,19 +50,17 @@ public class GlobalExceptionHandler {
         return ApiResponse.error("Accès refusé");
     }
 
-    @ExceptionHandler(Exception.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ApiResponse<Void> handleGeneral(Exception ex) {
-        // Log complet côté serveur (visible dans la console, pas par le client)
-        log.error("Erreur inattendue", ex);
-        // Message générique côté client (ne jamais exposer les détails)
-        return ApiResponse.error("Erreur interne du serveur");
-    }
-
     @ExceptionHandler(DataIntegrityViolationException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
     public ApiResponse<Void> handleDataIntegrity(DataIntegrityViolationException ex) {
         log.warn("Contrainte de base violée : {}", ex.getMessage());
         return ApiResponse.error("Cette ressource existe déjà");
+    }
+
+    @ExceptionHandler(Exception.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ApiResponse<Void> handleGeneral(Exception ex) {
+        log.error("Erreur inattendue", ex);
+        return ApiResponse.error("Erreur interne du serveur");
     }
 }
