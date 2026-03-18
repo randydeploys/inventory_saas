@@ -194,6 +194,19 @@ class BuildingServiceTest {
         assertEquals("Nouvelle adresse", result.address());
     }
 
+    @Test
+    void update_withInvalidId_shouldThrowNotFoundException() {
+        // Arrange
+        UUID buildingId = UUID.randomUUID();
+        when(securityHelper.getCurrentTenantId()).thenReturn(tenantId);
+        when(buildingRepository.findByIdAndTenantIdAndDeletedAtIsNull(buildingId, tenantId))
+                .thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(ResourceNotFoundException.class,
+                () -> buildingService.update(buildingId, new BuildingRequest("Nom", "Adresse")));
+    }
+
     // ─── delete ──────────────────────────────────────────────────
 
     @Test

@@ -199,6 +199,17 @@ class RoomServiceTest {
         assertEquals("Nouvelle description", result.description());
     }
 
+    @Test
+    void update_withInvalidId_shouldThrowNotFoundException() {
+        UUID roomId = UUID.randomUUID();
+        when(securityHelper.getCurrentTenantId()).thenReturn(tenantId);
+        when(roomRepository.findByIdAndTenantIdAndDeletedAtIsNull(roomId, tenantId))
+                .thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class,
+                () -> roomService.update(roomId, new RoomRequest("Nom", "Description")));
+    }
+
     // ─── delete ──────────────────────────────────────────────────
 
     @Test
