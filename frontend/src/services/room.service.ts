@@ -23,4 +23,7 @@ export const roomService = {
 
   delete: (id: string) =>
     api.delete<ApiResponse<void>>(`/api/rooms/${id}`),
+
+  reassign: (id: string, targetRoomId: string) =>
+    api.post<ApiResponse<void>>(`/api/rooms/${id}/reassign`, { targetRoomId }),
 };

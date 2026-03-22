@@ -42,3 +42,14 @@ export function useDeleteRoom() {
     },
   });
 }
+
+export function useReassignRoom() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, targetRoomId }: { id: string; targetRoomId: string }) =>
+      roomService.reassign(id, targetRoomId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["rooms"] });
+    },
+  });
+}

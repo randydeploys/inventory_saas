@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useBuildings } from "@/hooks/useBuildings";
-import { useRooms, useCreateRoom, useUpdateRoom, useDeleteRoom } from "@/hooks/useRooms";
+import { useRooms, useCreateRoom, useUpdateRoom, useDeleteRoom, useReassignRoom } from "@/hooks/useRooms";
 import { useAuth } from "@/context/AuthContext";
 import RoomDialog from "@/components/rooms/RoomDialog";
+import ReassignDialog from "@/components/shared/ReassignDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -15,7 +16,7 @@ import {
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import type { Room } from "@/types/api";
 import { toast } from "sonner";
-import { getErrorMessage } from "@/lib/error";
+import { getErrorMessage, isConflict } from "@/lib/error";
 
 export default function RoomsPage() {
   const { user } = useAuth();
@@ -28,9 +29,13 @@ export default function RoomsPage() {
   const createMutation = useCreateRoom();
   const updateMutation = useUpdateRoom();
   const deleteMutation = useDeleteRoom();
+  const reassignMutation = useReassignRoom();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingRoom, setEditingRoom] = useState<Room | null>(null);
+  const [reassignOpen, setReassignOpen] = useState(false);
+  const [reassignRoomId, setReassignRoomId] = useState<string | null>(null);
+  const [reassignMessage, setReassignMessage] = useState("");
 
   const handleCreate = () => {
     setEditingRoom(null);
@@ -43,12 +48,34 @@ export default function RoomsPage() {
   };
 
   const handleDelete = (id: string) => {
-    if (window.confirm("Archiver cette zone ?")) {
-      deleteMutation.mutate(id, {
-        onSuccess: () => toast.success("Zone archivée"),
+    if (!window.confirm("Archiver cette zone ?")) return;
+    deleteMutation.mutate(id, {
+      onSuccess: () => toast.success("Zone archivée"),
+      onError: (err) => {
+        if (isConflict(err)) {
+          setReassignRoomId(id);
+          setReassignMessage(getErrorMessage(err));
+          setReassignOpen(true);
+        } else {
+          toast.error(getErrorMessage(err));
+        }
+      },
+    });
+  };
+
+  const handleReassign = (targetRoomId: string) => {
+    if (!reassignRoomId) return;
+    reassignMutation.mutate(
+      { id: reassignRoomId, targetRoomId },
+      {
+        onSuccess: () => {
+          setReassignOpen(false);
+          setReassignRoomId(null);
+          toast.success("Produits réaffectés. Vous pouvez maintenant archiver la zone.");
+        },
         onError: (err) => toast.error(getErrorMessage(err)),
-      });
-    }
+      }
+    );
   };
 
   const handleSubmit = (data: { name: string; description?: string }) => {
@@ -154,6 +181,19 @@ export default function RoomsPage() {
         onSubmit={handleSubmit}
         room={editingRoom}
         isLoading={createMutation.isPending || updateMutation.isPending}
+      />
+
+      <ReassignDialog
+        open={reassignOpen}
+        onClose={() => {
+          setReassignOpen(false);
+          setReassignRoomId(null);
+        }}
+        onSubmit={handleReassign}
+        isLoading={reassignMutation.isPending}
+        title="Réaffecter les produits de la zone"
+        description={reassignMessage}
+        excludeRoomId={reassignRoomId ?? undefined}
       />
     </div>
   );

@@ -47,3 +47,14 @@ export function useDeleteBuilding() {
     },
   });
 }
+
+export function useReassignBuilding() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, targetRoomId }: { id: string; targetRoomId: string }) =>
+      buildingService.reassign(id, targetRoomId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["buildings"] });
+    },
+  });
+}
