@@ -9,6 +9,9 @@ import RoomsPage from "./pages/RoomsPage";
 import CategoriesPage from "./pages/CategoriesPage";
 import ProductsPage from "./pages/ProductsPage";
 import MovementsPage from "./pages/MovementsPage";
+import { Toaster } from "sonner";
+import UsersPage from "./pages/UsersPage";
+import BuildingDetailPage from "./pages/BuildingDetailPage";
 
 const queryClient = new QueryClient();
 
@@ -55,11 +58,12 @@ function AppRoutes() {
         }
       >
         <Route path="/buildings" element={<BuildingsPage />} />
+        <Route path="/buildings/:id" element={<BuildingDetailPage />} />
         <Route path="/rooms" element={<RoomsPage />} />
         <Route path="/categories" element={<CategoriesPage />} />
         <Route path="/products" element={<ProductsPage />} />
         <Route path="/movements" element={<MovementsPage />} />
-        <Route path="/users" element={<div>Page Utilisateurs — à construire</div>} />
+        <Route path="/users" element={<UsersPage />} />
         <Route path="/" element={<Navigate to="/buildings" />} />
       </Route>
     </Routes>
@@ -72,6 +76,7 @@ export default function App() {
       <BrowserRouter>
         <AuthProvider>
           <AppRoutes />
+          <Toaster richColors position="top-right" />
         </AuthProvider>
       </BrowserRouter>
     </QueryClientProvider>

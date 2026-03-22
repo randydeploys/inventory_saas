@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/select";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import type { Room } from "@/types/api";
+import { toast } from "sonner";
+import { getErrorMessage } from "@/lib/error";
 
 export default function RoomsPage() {
   const { user } = useAuth();
@@ -42,7 +44,10 @@ export default function RoomsPage() {
 
   const handleDelete = (id: string) => {
     if (window.confirm("Archiver cette zone ?")) {
-      deleteMutation.mutate(id);
+      deleteMutation.mutate(id, {
+        onSuccess: () => toast.success("Zone archivée"),
+        onError: (err) => toast.error(getErrorMessage(err)),
+      });
     }
   };
 
@@ -50,12 +55,23 @@ export default function RoomsPage() {
     if (editingRoom) {
       updateMutation.mutate(
         { id: editingRoom.id, data },
-        { onSuccess: () => setDialogOpen(false) }
-      );
+ {
+        onSuccess: () => {
+          setDialogOpen(false);
+          toast.success("Zone modifiée");
+        },
+        onError: (err) => toast.error(getErrorMessage(err)),
+      }      );
     } else {
       createMutation.mutate(
         { buildingId: selectedBuildingId, data },
-        { onSuccess: () => setDialogOpen(false) }
+        { 
+          onSuccess: () => {
+          setDialogOpen(false);
+          toast.success("Zone créée");
+        },
+        onError: (err) => toast.error(getErrorMessage(err)),
+      }
       );
     }
   };

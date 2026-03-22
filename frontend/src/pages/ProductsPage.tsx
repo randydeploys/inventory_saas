@@ -14,6 +14,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Pencil, Trash2, ChevronLeft, ChevronRight, AlertTriangle } from "lucide-react";
 import type { Product } from "@/types/api";
 import { useDebounce } from "@/hooks/useDebounce";
+import { toast } from "sonner";
+import { getErrorMessage } from "@/lib/error";
 
 
 export default function ProductsPage() {
@@ -56,7 +58,10 @@ const debouncedSearch = useDebounce(search, 300);
 
   const handleDelete = (id: string) => {
     if (window.confirm("Archiver ce produit ?")) {
-      deleteMutation.mutate(id);
+      deleteMutation.mutate(id, {
+        onSuccess: () => toast.success("Produit archivé"),
+        onError: (err) => toast.error(getErrorMessage(err)),
+      });
     }
   };
 
@@ -64,11 +69,21 @@ const debouncedSearch = useDebounce(search, 300);
     if (editingProduct) {
       updateMutation.mutate(
         { id: editingProduct.id, data },
-        { onSuccess: () => setDialogOpen(false) }
+         {
+        onSuccess: () => {
+          setDialogOpen(false);
+          toast.success("Produit modifié");
+        },
+        onError: (err) => toast.error(getErrorMessage(err)),
+      }
       );
     } else {
       createMutation.mutate(data, {
-        onSuccess: () => setDialogOpen(false),
+        onSuccess: () => {
+          setDialogOpen(false);
+          toast.success("Produit créé");
+        },
+        onError: (err) => toast.error(getErrorMessage(err)),
       });
     }
   };

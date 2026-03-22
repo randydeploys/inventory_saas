@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import type { Category } from "@/types/api";
+import { toast } from "sonner";
+import { getErrorMessage } from "@/lib/error";
 
 export default function CategoriesPage() {
   const { user } = useAuth();
@@ -36,7 +38,10 @@ export default function CategoriesPage() {
 
   const handleDelete = (id: string) => {
     if (window.confirm("Archiver cette catégorie ?")) {
-      deleteMutation.mutate(id);
+      deleteMutation.mutate(id, {
+        onSuccess: () => toast.success("Catégorie archivée"),
+        onError: (err) => toast.error(getErrorMessage(err)),
+      });
     }
   };
 
@@ -44,11 +49,21 @@ export default function CategoriesPage() {
     if (editingCategory) {
       updateMutation.mutate(
         { id: editingCategory.id, data },
-        { onSuccess: () => setDialogOpen(false) }
+         {
+        onSuccess: () => {
+          setDialogOpen(false);
+          toast.success("Catégorie modifiée");
+        },
+        onError: (err) => toast.error(getErrorMessage(err)),
+      }
       );
     } else {
       createMutation.mutate(data, {
-        onSuccess: () => setDialogOpen(false),
+        onSuccess: () => {
+          setDialogOpen(false);
+          toast.success("Catégorie créée");
+        },
+        onError: (err) => toast.error(getErrorMessage(err)),
       });
     }
   };

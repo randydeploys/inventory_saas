@@ -6,6 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import type { Building } from "@/types/api";
+import { toast } from "sonner";
+import { getErrorMessage } from "@/lib/error";
+import { useNavigate } from "react-router-dom";
 
 export default function BuildingsPage() {
   const { user } = useAuth();
@@ -19,6 +22,8 @@ export default function BuildingsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingBuilding, setEditingBuilding] = useState<Building | null>(null);
 
+
+  const navigate = useNavigate();
   const handleCreate = () => {
     setEditingBuilding(null);
     setDialogOpen(true);
@@ -29,24 +34,37 @@ export default function BuildingsPage() {
     setDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    if (window.confirm("Archiver ce bâtiment ?")) {
-      deleteMutation.mutate(id);
-    }
-  };
+const handleDelete = (id: string) => {
+  if (window.confirm("Archiver ce bâtiment ?")) {
+    deleteMutation.mutate(id, {
+      onSuccess: () => toast.success("Bâtiment archivé"),
+      onError: (err) => toast.error(getErrorMessage(err)),
+    });
+  }
+};
 
-  const handleSubmit = (data: { name: string; address?: string }) => {
-    if (editingBuilding) {
-      updateMutation.mutate(
-        { id: editingBuilding.id, data },
-        { onSuccess: () => setDialogOpen(false) }
-      );
-    } else {
-      createMutation.mutate(data, {
-        onSuccess: () => setDialogOpen(false),
-      });
-    }
-  };
+const handleSubmit = (data: { name: string; address?: string }) => {
+  if (editingBuilding) {
+    updateMutation.mutate(
+      { id: editingBuilding.id, data },
+      {
+        onSuccess: () => {
+          setDialogOpen(false);
+          toast.success("Bâtiment modifié");
+        },
+        onError: (err) => toast.error(getErrorMessage(err)),
+      }
+    );
+  } else {
+    createMutation.mutate(data, {
+      onSuccess: () => {
+        setDialogOpen(false);
+        toast.success("Bâtiment créé");
+      },
+      onError: (err) => toast.error(getErrorMessage(err)),
+    });
+  }
+};
 
   if (isLoading) return <div>Chargement...</div>;
   if (error) return <div>Erreur lors du chargement</div>;
@@ -68,7 +86,8 @@ export default function BuildingsPage() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {buildings?.map((building) => (
-            <Card key={building.id}>
+            <Card key={building.id}   className="cursor-pointer hover:border-primary transition-colors"
+  onClick={() => navigate(`/buildings/${building.id}`)} >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-lg">{building.name}</CardTitle>
                 {isAdmin && (
@@ -76,14 +95,21 @@ export default function BuildingsPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => handleEdit(building)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEdit(building);
+                      }}
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => handleDelete(building.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(building.id);
+                      }}
+                      
                     >
                       <Trash2 className="h-4 w-4 text-red-500" />
                     </Button>

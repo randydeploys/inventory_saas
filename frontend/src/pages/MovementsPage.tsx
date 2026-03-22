@@ -13,6 +13,7 @@ import {
   ArrowUpFromLine,
   ArrowLeftRight,
 } from "lucide-react";
+import { toast } from "sonner";
 
 const typeIcons = {
   IN: <ArrowDownToLine className="h-4 w-4 text-green-500" />,
@@ -46,9 +47,13 @@ export default function MovementsPage() {
   const handleSubmit = (data: Parameters<typeof createMutation.mutate>[0]) => {
     setFormError("");
     createMutation.mutate(data, {
-      onSuccess: () => setDialogOpen(false),
+      onSuccess: () => {
+        setDialogOpen(false);
+        toast.success("Mouvement créé");
+      },
       onError: (err) => {
         setFormError(getErrorMessage(err));
+        toast.error(getErrorMessage(err));
       },
     });
   };
