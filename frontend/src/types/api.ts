@@ -40,3 +40,59 @@ export interface Room {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface Category {
+  id: string;
+  name: string;
+  color: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ProductStock {
+  roomId: string;
+  roomName: string;
+  quantity: number;
+}
+
+export interface Product {
+  id: string;
+  name: string;
+  sku: string;
+  description: string;
+  trackingType: "QUANTITY" | "UNIQUE";
+  categoryId: string | null;
+  categoryName: string | null;
+  serialNumber: string | null;
+  minQuantity: number | null;
+  unit: string | null;
+  totalQuantity: number;
+  stocks: ProductStock[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PaginatedResponse<T> {
+  content: T[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+}
+
+export interface Movement {
+  id: string;
+  productId: string;
+  productName: string;
+  productSku: string;
+  type: "IN" | "OUT" | "TRANSFER";
+  quantity: number;
+  fromRoomId: string | null;
+  fromRoomName: string | null;
+  toRoomId: string | null;
+  toRoomName: string | null;
+  reason: string | null;
+  performedBy: string;
+  performedByName: string;
+  createdAt: string;
+}

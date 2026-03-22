@@ -5,6 +5,10 @@ import LoginPage from "@/pages/LoginPage";
 import RegisterPage from "@/pages/RegisterPage";
 import AppLayout from "@/components/layout/AppLayout";
 import BuildingsPage from "./pages/BuildingsPage";
+import RoomsPage from "./pages/RoomsPage";
+import CategoriesPage from "./pages/CategoriesPage";
+import ProductsPage from "./pages/ProductsPage";
+import MovementsPage from "./pages/MovementsPage";
 
 const queryClient = new QueryClient();
 
@@ -51,10 +55,10 @@ function AppRoutes() {
         }
       >
         <Route path="/buildings" element={<BuildingsPage />} />
-        <Route path="/rooms" element={<div>Page Zones — à construire</div>} />
-        <Route path="/categories" element={<div>Page Catégories — à construire</div>} />
-        <Route path="/products" element={<div>Page Produits — à construire</div>} />
-        <Route path="/movements" element={<div>Page Mouvements — à construire</div>} />
+        <Route path="/rooms" element={<RoomsPage />} />
+        <Route path="/categories" element={<CategoriesPage />} />
+        <Route path="/products" element={<ProductsPage />} />
+        <Route path="/movements" element={<MovementsPage />} />
         <Route path="/users" element={<div>Page Utilisateurs — à construire</div>} />
         <Route path="/" element={<Navigate to="/buildings" />} />
       </Route>
