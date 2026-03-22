@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import LoginPage from "@/pages/LoginPage";
 import RegisterPage from "@/pages/RegisterPage";
+import { Button } from "./components/ui/button";
 
 const queryClient = new QueryClient();
 
@@ -27,6 +28,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 }
 
 function AppRoutes() {
+  const { logout } = useAuth();
   return (
     <Routes>
       <Route
@@ -50,6 +52,7 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <div>Dashboard — à construire</div>
+            <Button onClick={() => logout()} >Déconnexion</Button>
           </ProtectedRoute>
         }
       />

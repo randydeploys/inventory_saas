@@ -62,8 +62,8 @@ api.interceptors.response.use(
       } catch (refreshError) {
         // Le refresh a échoué → session expirée
         processQueue(refreshError);
-        // Rediriger vers login
-        window.location.href = "/login";
+        // // Rediriger vers login
+        // window.location.href = "/login";
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
