@@ -3,32 +3,25 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import LoginPage from "@/pages/LoginPage";
 import RegisterPage from "@/pages/RegisterPage";
-import { Button } from "./components/ui/button";
+import AppLayout from "@/components/layout/AppLayout";
 
 const queryClient = new QueryClient();
 
-// Route protégée — redirige vers login si pas connecté
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
-
   if (isLoading) return <div>Chargement...</div>;
   if (!user) return <Navigate to="/login" />;
-
   return <>{children}</>;
 }
 
-// Route publique — redirige vers / si déjà connecté
 function PublicRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
-
   if (isLoading) return <div>Chargement...</div>;
-  if (user) return <Navigate to="/" />;
-
+  if (user) return <Navigate to="/buildings" />;
   return <>{children}</>;
 }
 
 function AppRoutes() {
-  const { logout } = useAuth();
   return (
     <Routes>
       <Route
@@ -47,15 +40,23 @@ function AppRoutes() {
           </PublicRoute>
         }
       />
+
+      {/* Routes protégées avec le Layout */}
       <Route
-        path="/"
         element={
           <ProtectedRoute>
-            <div>Dashboard — à construire</div>
-            <Button onClick={() => logout()} >Déconnexion</Button>
+            <AppLayout />
           </ProtectedRoute>
         }
-      />
+      >
+        <Route path="/buildings" element={<div>Page Bâtiments — à construire</div>} />
+        <Route path="/rooms" element={<div>Page Zones — à construire</div>} />
+        <Route path="/categories" element={<div>Page Catégories — à construire</div>} />
+        <Route path="/products" element={<div>Page Produits — à construire</div>} />
+        <Route path="/movements" element={<div>Page Mouvements — à construire</div>} />
+        <Route path="/users" element={<div>Page Utilisateurs — à construire</div>} />
+        <Route path="/" element={<Navigate to="/buildings" />} />
+      </Route>
     </Routes>
   );
 }
