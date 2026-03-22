@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from "@/context/AuthContext";
 import LoginPage from "@/pages/LoginPage";
 import RegisterPage from "@/pages/RegisterPage";
 import AppLayout from "@/components/layout/AppLayout";
+import BuildingsPage from "./pages/BuildingsPage";
 
 const queryClient = new QueryClient();
 
@@ -49,7 +50,7 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       >
-        <Route path="/buildings" element={<div>Page Bâtiments — à construire</div>} />
+        <Route path="/buildings" element={<BuildingsPage />} />
         <Route path="/rooms" element={<div>Page Zones — à construire</div>} />
         <Route path="/categories" element={<div>Page Catégories — à construire</div>} />
         <Route path="/products" element={<div>Page Produits — à construire</div>} />
