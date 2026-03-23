@@ -1,13 +1,17 @@
 import { useState } from "react";
 import {
   useProducts,
+  useLowStock,
   useCreateProduct,
   useUpdateProduct,
   useDeleteProduct,
 } from "@/hooks/useProducts";
+import { useCreateMovement } from "@/hooks/useMovements";
 import { useCategories } from "@/hooks/useCategories";
 import { useAuth } from "@/context/AuthContext";
 import ProductDialog from "@/components/products/ProductDialog";
+import type { InitialStock } from "@/components/products/ProductDialog";
+import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,6 +30,7 @@ export default function ProductsPage() {
   const [categoryId, setCategoryId] = useState("");
   const [trackingType, setTrackingType] = useState("");
   const [page, setPage] = useState(0);
+  const [lowStockOnly, setLowStockOnly] = useState(false);
 
 const [search, setSearch] = useState("");
 const debouncedSearch = useDebounce(search, 300);
@@ -38,13 +43,17 @@ const debouncedSearch = useDebounce(search, 300);
     categoryId: categoryId || undefined,
     trackingType: trackingType || undefined,
   });
+  const { data: lowStockProducts } = useLowStock();
 
   const createMutation = useCreateProduct();
   const updateMutation = useUpdateProduct();
   const deleteMutation = useDeleteProduct();
+  const createMovementMutation = useCreateMovement();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmTargetId, setConfirmTargetId] = useState<string | null>(null);
 
   const handleCreate = () => {
     setEditingProduct(null);
@@ -57,31 +66,62 @@ const debouncedSearch = useDebounce(search, 300);
   };
 
   const handleDelete = (id: string) => {
-    if (window.confirm("Archiver ce produit ?")) {
-      deleteMutation.mutate(id, {
-        onSuccess: () => toast.success("Produit archivé"),
-        onError: (err) => toast.error(getErrorMessage(err)),
-      });
-    }
+    setConfirmTargetId(id);
+    setConfirmOpen(true);
   };
 
-  const handleSubmit = (data: Parameters<typeof createMutation.mutate>[0]) => {
+  const handleConfirmDelete = () => {
+    if (!confirmTargetId) return;
+    const id = confirmTargetId;
+    setConfirmOpen(false);
+    setConfirmTargetId(null);
+    deleteMutation.mutate(id, {
+      onSuccess: () => toast.success("Produit archivé"),
+      onError: (err) => toast.error(getErrorMessage(err)),
+    });
+  };
+
+  const handleSubmit = (
+    data: Parameters<typeof createMutation.mutate>[0],
+    initialStock?: InitialStock
+  ) => {
     if (editingProduct) {
       updateMutation.mutate(
         { id: editingProduct.id, data },
-         {
-        onSuccess: () => {
-          setDialogOpen(false);
-          toast.success("Produit modifié");
-        },
-        onError: (err) => toast.error(getErrorMessage(err)),
-      }
+        {
+          onSuccess: () => {
+            setDialogOpen(false);
+            toast.success("Produit modifié");
+          },
+          onError: (err) => toast.error(getErrorMessage(err)),
+        }
       );
     } else {
       createMutation.mutate(data, {
-        onSuccess: () => {
+        onSuccess: (res) => {
+          const newProductId = res.data.data.id;
           setDialogOpen(false);
-          toast.success("Produit créé");
+
+          if (initialStock) {
+            createMovementMutation.mutate(
+              {
+                productId: newProductId,
+                type: "IN",
+                quantity: initialStock.quantity,
+                toRoomId: initialStock.toRoomId,
+                reason: initialStock.reason,
+              },
+              {
+                onSuccess: () => toast.success("Produit créé et stock ajouté"),
+                onError: (err) =>
+                  toast.error(
+                    `Produit créé mais le stock initial n'a pas pu être ajouté : ${getErrorMessage(err)}`
+                  ),
+              }
+            );
+          } else {
+            toast.success("Produit créé");
+          }
         },
         onError: (err) => toast.error(getErrorMessage(err)),
       });
@@ -93,13 +133,33 @@ const debouncedSearch = useDebounce(search, 300);
     product.minQuantity !== null &&
     product.totalQuantity < product.minQuantity;
 
+  const displayedProducts = lowStockOnly
+    ? lowStockProducts ?? []
+    : paginated?.content ?? [];
+  const showPagination = !lowStockOnly && paginated && paginated.totalPages > 1;
+
   if (isLoading) return <div>Chargement...</div>;
   if (error) return <div>Erreur lors du chargement</div>;
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Produits</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-bold">Produits</h1>
+          {(lowStockProducts?.length ?? 0) > 0 && (
+            <button
+              onClick={() => setLowStockOnly(!lowStockOnly)}
+              className={`flex items-center gap-1.5 text-sm px-2.5 py-1 rounded-full font-medium transition-colors ${
+                lowStockOnly
+                  ? "bg-orange-500 text-white"
+                  : "bg-orange-100 text-orange-700 hover:bg-orange-200"
+              }`}
+            >
+              <AlertTriangle className="h-3.5 w-3.5" />
+              {lowStockProducts!.length} stock bas
+            </button>
+          )}
+        </div>
         {canEdit && (
           <Button onClick={handleCreate}>
             <Plus className="h-4 w-4 mr-2" />
@@ -149,12 +209,14 @@ const debouncedSearch = useDebounce(search, 300);
       </div>
 
       {/* Liste des produits */}
-      {paginated?.content.length === 0 ? (
-        <p className="text-muted-foreground">Aucun produit trouvé.</p>
+      {displayedProducts.length === 0 ? (
+        <p className="text-muted-foreground">
+          {lowStockOnly ? "Aucun produit en stock bas." : "Aucun produit trouvé."}
+        </p>
       ) : (
         <>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {paginated?.content.map((product) => (
+            {displayedProducts.map((product) => (
               <Card
                 key={product.id}
                 className={isLowStock(product) ? "border-orange-400" : ""}
@@ -219,7 +281,7 @@ const debouncedSearch = useDebounce(search, 300);
           </div>
 
           {/* Pagination */}
-          {paginated && paginated.totalPages > 1 && (
+          {showPagination && (
             <div className="flex items-center justify-center gap-4 mt-6">
               <Button
                 variant="outline"
@@ -230,13 +292,13 @@ const debouncedSearch = useDebounce(search, 300);
                 <ChevronLeft className="h-4 w-4" />
               </Button>
               <span className="text-sm text-muted-foreground">
-                Page {page + 1} / {paginated.totalPages}
+                Page {page + 1} / {paginated!.totalPages}
               </span>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setPage(page + 1)}
-                disabled={page >= paginated.totalPages - 1}
+                disabled={page >= paginated!.totalPages - 1}
               >
                 <ChevronRight className="h-4 w-4" />
               </Button>
@@ -250,7 +312,16 @@ const debouncedSearch = useDebounce(search, 300);
         onClose={() => setDialogOpen(false)}
         onSubmit={handleSubmit}
         product={editingProduct}
-        isLoading={createMutation.isPending || updateMutation.isPending}
+        isLoading={createMutation.isPending || updateMutation.isPending || createMovementMutation.isPending}
+      />
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onClose={() => { setConfirmOpen(false); setConfirmTargetId(null); }}
+        onConfirm={handleConfirmDelete}
+        title="Archiver ce produit ?"
+        description="Cette action est réversible. Le produit ne sera plus visible dans les listes actives."
+        isLoading={deleteMutation.isPending}
       />
     </div>
   );

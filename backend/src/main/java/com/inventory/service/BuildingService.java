@@ -1,5 +1,6 @@
 package com.inventory.service;
 
+import com.inventory.exception.ConflictException;
 import com.inventory.exception.ResourceNotFoundException;
 import com.inventory.mapper.BuildingMapper;
 import com.inventory.model.dto.BuildingRequest;
@@ -8,6 +9,7 @@ import com.inventory.model.entity.Building;
 import com.inventory.model.entity.Tenant;
 import com.inventory.model.entity.User;
 import com.inventory.repository.BuildingRepository;
+import com.inventory.repository.ProductStockRepository;
 import com.inventory.repository.TenantRepository;
 import com.inventory.repository.UserRepository;
 import com.inventory.security.SecurityHelper;
@@ -22,17 +24,20 @@ import java.util.UUID;
 public class BuildingService {
 
     private final BuildingRepository buildingRepository;
+    private final ProductStockRepository productStockRepository;
     private final TenantRepository tenantRepository;
     private final UserRepository userRepository;
     private final SecurityHelper securityHelper;
 
     public BuildingService(
             BuildingRepository buildingRepository,
+            ProductStockRepository productStockRepository,
             TenantRepository tenantRepository,
             UserRepository userRepository,
             SecurityHelper securityHelper
     ) {
         this.buildingRepository = buildingRepository;
+        this.productStockRepository = productStockRepository;
         this.tenantRepository = tenantRepository;
         this.userRepository = userRepository;
         this.securityHelper = securityHelper;
@@ -46,7 +51,7 @@ public class BuildingService {
                 : buildingRepository.findByTenantIdAndDeletedAtIsNull(tenantId);
 
         return buildings.stream()
-                .map(BuildingMapper::toResponse)
+                .map(b -> BuildingMapper.toResponse(b, productStockRepository.countByBuildingId(b.getId())))
                 .toList();
     }
 
@@ -57,7 +62,7 @@ public class BuildingService {
                 .findByIdAndTenantIdAndDeletedAtIsNull(id, tenantId)
                 .orElseThrow(() -> new ResourceNotFoundException("Bâtiment introuvable"));
 
-        return BuildingMapper.toResponse(building);
+        return BuildingMapper.toResponse(building, productStockRepository.countByBuildingId(id));
     }
 
     @Transactional
@@ -98,6 +103,14 @@ public class BuildingService {
         Building building = buildingRepository
                 .findByIdAndTenantIdAndDeletedAtIsNull(id, tenantId)
 .orElseThrow(() -> new ResourceNotFoundException("Bâtiment introuvable"));
+
+        long activeStockCount = productStockRepository.countByBuildingId(id);
+        if (activeStockCount > 0) {
+            throw new ConflictException(
+                    "Ce bâtiment contient " + activeStockCount + " produit(s) actif(s). " +
+                    "Utilisez la réaffectation pour déplacer les produits avant d'archiver."
+            );
+        }
 
         building.setDeletedAt(Instant.now());
         buildingRepository.save(building);

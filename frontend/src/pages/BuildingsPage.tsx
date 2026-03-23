@@ -2,13 +2,13 @@ import { useState } from "react";
 import { useBuildings, useCreateBuilding, useUpdateBuilding, useDeleteBuilding, useReassignBuilding } from "@/hooks/useBuildings";
 import { useAuth } from "@/context/AuthContext";
 import BuildingDialog from "@/components/buildings/BuildingDialog";
-import ReassignDialog from "@/components/shared/ReassignDialog";
+import ArchiveDialog from "@/components/shared/ArchiveDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import type { Building } from "@/types/api";
 import { toast } from "sonner";
-import { getErrorMessage, isConflict } from "@/lib/error";
+import { getErrorMessage } from "@/lib/error";
 import { useNavigate } from "react-router-dom";
 
 export default function BuildingsPage() {
@@ -21,14 +21,11 @@ export default function BuildingsPage() {
   const deleteMutation = useDeleteBuilding();
   const reassignMutation = useReassignBuilding();
 
+  const navigate = useNavigate();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingBuilding, setEditingBuilding] = useState<Building | null>(null);
-  const [reassignOpen, setReassignOpen] = useState(false);
-  const [reassignBuildingId, setReassignBuildingId] = useState<string | null>(null);
-  const [reassignMessage, setReassignMessage] = useState("");
+  const [archiveBuilding, setArchiveBuilding] = useState<Building | null>(null);
 
-
-  const navigate = useNavigate();
   const handleCreate = () => {
     setEditingBuilding(null);
     setDialogOpen(true);
@@ -39,59 +36,60 @@ export default function BuildingsPage() {
     setDialogOpen(true);
   };
 
-const handleDelete = (id: string) => {
-  if (!window.confirm("Archiver ce bâtiment ?")) return;
-  deleteMutation.mutate(id, {
-    onSuccess: () => toast.success("Bâtiment archivé"),
-    onError: (err) => {
-      if (isConflict(err)) {
-        setReassignBuildingId(id);
-        setReassignMessage(getErrorMessage(err));
-        setReassignOpen(true);
-      } else {
-        toast.error(getErrorMessage(err));
-      }
-    },
-  });
-};
+  const handleDelete = (building: Building) => {
+    setArchiveBuilding(building);
+  };
 
-const handleReassign = (targetRoomId: string) => {
-  if (!reassignBuildingId) return;
-  reassignMutation.mutate(
-    { id: reassignBuildingId, targetRoomId },
-    {
-      onSuccess: () => {
-        setReassignOpen(false);
-        setReassignBuildingId(null);
-        toast.success("Produits réaffectés. Vous pouvez maintenant archiver le bâtiment.");
-      },
+  const handleConfirmArchive = () => {
+    if (!archiveBuilding) return;
+    const id = archiveBuilding.id;
+    setArchiveBuilding(null);
+    deleteMutation.mutate(id, {
+      onSuccess: () => toast.success("Bâtiment archivé"),
       onError: (err) => toast.error(getErrorMessage(err)),
-    }
-  );
-};
+    });
+  };
 
-const handleSubmit = (data: { name: string; address?: string }) => {
-  if (editingBuilding) {
-    updateMutation.mutate(
-      { id: editingBuilding.id, data },
+  const handleReassign = (targetRoomId: string) => {
+    if (!archiveBuilding) return;
+    const id = archiveBuilding.id;
+    reassignMutation.mutate(
+      { id, targetRoomId },
       {
         onSuccess: () => {
-          setDialogOpen(false);
-          toast.success("Bâtiment modifié");
+          setArchiveBuilding(null);
+          deleteMutation.mutate(id, {
+            onSuccess: () => toast.success("Produits déplacés et bâtiment archivé"),
+            onError: (err) => toast.error(getErrorMessage(err)),
+          });
         },
         onError: (err) => toast.error(getErrorMessage(err)),
       }
     );
-  } else {
-    createMutation.mutate(data, {
-      onSuccess: () => {
-        setDialogOpen(false);
-        toast.success("Bâtiment créé");
-      },
-      onError: (err) => toast.error(getErrorMessage(err)),
-    });
-  }
-};
+  };
+
+  const handleSubmit = (data: { name: string; address?: string }) => {
+    if (editingBuilding) {
+      updateMutation.mutate(
+        { id: editingBuilding.id, data },
+        {
+          onSuccess: () => {
+            setDialogOpen(false);
+            toast.success("Bâtiment modifié");
+          },
+          onError: (err) => toast.error(getErrorMessage(err)),
+        }
+      );
+    } else {
+      createMutation.mutate(data, {
+        onSuccess: () => {
+          setDialogOpen(false);
+          toast.success("Bâtiment créé");
+        },
+        onError: (err) => toast.error(getErrorMessage(err)),
+      });
+    }
+  };
 
   if (isLoading) return <div>Chargement...</div>;
   if (error) return <div>Erreur lors du chargement</div>;
@@ -113,8 +111,11 @@ const handleSubmit = (data: { name: string; address?: string }) => {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {buildings?.map((building) => (
-            <Card key={building.id}   className="cursor-pointer hover:border-primary transition-colors"
-  onClick={() => navigate(`/buildings/${building.id}`)} >
+            <Card
+              key={building.id}
+              className="cursor-pointer hover:border-primary transition-colors"
+              onClick={() => navigate(`/buildings/${building.id}`)}
+            >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-lg">{building.name}</CardTitle>
                 {isAdmin && (
@@ -122,21 +123,14 @@ const handleSubmit = (data: { name: string; address?: string }) => {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEdit(building);
-                      }}
+                      onClick={(e) => { e.stopPropagation(); handleEdit(building); }}
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(building.id);
-                      }}
-                      
+                      onClick={(e) => { e.stopPropagation(); handleDelete(building); }}
                     >
                       <Trash2 className="h-4 w-4 text-red-500" />
                     </Button>
@@ -161,17 +155,14 @@ const handleSubmit = (data: { name: string; address?: string }) => {
         isLoading={createMutation.isPending || updateMutation.isPending}
       />
 
-      <ReassignDialog
-        open={reassignOpen}
-        onClose={() => {
-          setReassignOpen(false);
-          setReassignBuildingId(null);
-        }}
-        onSubmit={handleReassign}
-        isLoading={reassignMutation.isPending}
-        title="Réaffecter les produits du bâtiment"
-        description={reassignMessage}
-        excludeBuildingId={reassignBuildingId ?? undefined}
+      <ArchiveDialog
+        open={!!archiveBuilding}
+        onClose={() => setArchiveBuilding(null)}
+        onConfirm={handleConfirmArchive}
+        onReassign={handleReassign}
+        entityLabel="ce bâtiment"
+        activeProductCount={archiveBuilding?.activeProductCount ?? 0}
+        isLoading={deleteMutation.isPending || reassignMutation.isPending}
       />
     </div>
   );

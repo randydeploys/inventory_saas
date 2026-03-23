@@ -27,6 +27,7 @@ export interface Building {
   id: string;
   name: string;
   address: string;
+  activeProductCount: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -35,8 +36,10 @@ export interface Building {
 export interface Room {
   id: string;
   buildingId: string;
+  buildingName: string;
   name: string;
   description: string;
+  activeProductCount: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -78,6 +81,14 @@ export interface PaginatedResponse<T> {
   size: number;
   totalElements: number;
   totalPages: number;
+}
+
+export interface Tenant {
+  id: string;
+  name: string;
+  slug: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Movement {

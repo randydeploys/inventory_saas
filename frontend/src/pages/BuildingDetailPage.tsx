@@ -5,12 +5,12 @@ import { useRooms, useCreateRoom, useUpdateRoom, useDeleteRoom, useReassignRoom 
 import { useAuth } from "@/context/AuthContext";
 import RoomDialog from "@/components/rooms/RoomDialog";
 import BuildingDialog from "@/components/buildings/BuildingDialog";
-import ReassignDialog from "@/components/shared/ReassignDialog";
+import ArchiveDialog from "@/components/shared/ArchiveDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Plus, Pencil, Trash2, MapPin, DoorOpen } from "lucide-react";
 import { toast } from "sonner";
-import { getErrorMessage, isConflict } from "@/lib/error";
+import { getErrorMessage } from "@/lib/error";
 import type { Room } from "@/types/api";
 
 export default function BuildingDetailPage() {
@@ -33,31 +33,21 @@ export default function BuildingDetailPage() {
   const [buildingDialogOpen, setBuildingDialogOpen] = useState(false);
   const [roomDialogOpen, setRoomDialogOpen] = useState(false);
   const [editingRoom, setEditingRoom] = useState<Room | null>(null);
-
-  // Reassign building state
-  const [reassignBuildingOpen, setReassignBuildingOpen] = useState(false);
-  const [reassignBuildingMessage, setReassignBuildingMessage] = useState("");
-
-  // Reassign room state
-  const [reassignRoomOpen, setReassignRoomOpen] = useState(false);
-  const [reassignRoomId, setReassignRoomId] = useState<string | null>(null);
-  const [reassignRoomMessage, setReassignRoomMessage] = useState("");
+  const [archiveBuildingOpen, setArchiveBuildingOpen] = useState(false);
+  const [archiveRoom, setArchiveRoom] = useState<Room | null>(null);
 
   const handleDeleteBuilding = () => {
-    if (!window.confirm("Archiver ce bâtiment ?")) return;
+    setArchiveBuildingOpen(true);
+  };
+
+  const handleConfirmArchiveBuilding = () => {
+    setArchiveBuildingOpen(false);
     deleteBuildingMutation.mutate(id!, {
       onSuccess: () => {
         toast.success("Bâtiment archivé");
         navigate("/buildings");
       },
-      onError: (err) => {
-        if (isConflict(err)) {
-          setReassignBuildingMessage(getErrorMessage(err));
-          setReassignBuildingOpen(true);
-        } else {
-          toast.error(getErrorMessage(err));
-        }
-      },
+      onError: (err) => toast.error(getErrorMessage(err)),
     });
   };
 
@@ -66,8 +56,14 @@ export default function BuildingDetailPage() {
       { id: id!, targetRoomId },
       {
         onSuccess: () => {
-          setReassignBuildingOpen(false);
-          toast.success("Produits réaffectés. Vous pouvez maintenant archiver le bâtiment.");
+          setArchiveBuildingOpen(false);
+          deleteBuildingMutation.mutate(id!, {
+            onSuccess: () => {
+              toast.success("Produits déplacés et bâtiment archivé");
+              navigate("/buildings");
+            },
+            onError: (err) => toast.error(getErrorMessage(err)),
+          });
         },
         onError: (err) => toast.error(getErrorMessage(err)),
       }
@@ -101,31 +97,32 @@ export default function BuildingDetailPage() {
     setRoomDialogOpen(true);
   };
 
-  const handleDeleteRoom = (roomId: string) => {
-    if (!window.confirm("Archiver cette zone ?")) return;
+  const handleDeleteRoom = (room: Room) => {
+    setArchiveRoom(room);
+  };
+
+  const handleConfirmArchiveRoom = () => {
+    if (!archiveRoom) return;
+    const roomId = archiveRoom.id;
+    setArchiveRoom(null);
     deleteRoomMutation.mutate(roomId, {
       onSuccess: () => toast.success("Zone archivée"),
-      onError: (err) => {
-        if (isConflict(err)) {
-          setReassignRoomId(roomId);
-          setReassignRoomMessage(getErrorMessage(err));
-          setReassignRoomOpen(true);
-        } else {
-          toast.error(getErrorMessage(err));
-        }
-      },
+      onError: (err) => toast.error(getErrorMessage(err)),
     });
   };
 
   const handleReassignRoom = (targetRoomId: string) => {
-    if (!reassignRoomId) return;
+    if (!archiveRoom) return;
+    const roomId = archiveRoom.id;
     reassignRoomMutation.mutate(
-      { id: reassignRoomId, targetRoomId },
+      { id: roomId, targetRoomId },
       {
         onSuccess: () => {
-          setReassignRoomOpen(false);
-          setReassignRoomId(null);
-          toast.success("Produits réaffectés. Vous pouvez maintenant archiver la zone.");
+          setArchiveRoom(null);
+          deleteRoomMutation.mutate(roomId, {
+            onSuccess: () => toast.success("Produits déplacés et zone archivée"),
+            onError: (err) => toast.error(getErrorMessage(err)),
+          });
         },
         onError: (err) => toast.error(getErrorMessage(err)),
       }
@@ -247,7 +244,7 @@ export default function BuildingDetailPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => handleDeleteRoom(room.id)}
+                      onClick={() => handleDeleteRoom(room)}
                     >
                       <Trash2 className="h-4 w-4 text-red-500" />
                     </Button>
@@ -280,28 +277,27 @@ export default function BuildingDetailPage() {
         isLoading={createRoomMutation.isPending || updateRoomMutation.isPending}
       />
 
-      <ReassignDialog
-        open={reassignBuildingOpen}
-        onClose={() => setReassignBuildingOpen(false)}
-        onSubmit={handleReassignBuilding}
-        isLoading={reassignBuildingMutation.isPending}
-        title="Réaffecter les produits du bâtiment"
-        description={reassignBuildingMessage}
-        excludeBuildingId={id}
+      <ArchiveDialog
+        open={archiveBuildingOpen}
+        onClose={() => setArchiveBuildingOpen(false)}
+        onConfirm={handleConfirmArchiveBuilding}
+        onReassign={handleReassignBuilding}
+        entityLabel="ce bâtiment"
+        activeProductCount={building.activeProductCount ?? 0}
+        isLoading={deleteBuildingMutation.isPending || reassignBuildingMutation.isPending}
       />
 
-      <ReassignDialog
-        open={reassignRoomOpen}
-        onClose={() => {
-          setReassignRoomOpen(false);
-          setReassignRoomId(null);
-        }}
-        onSubmit={handleReassignRoom}
-        isLoading={reassignRoomMutation.isPending}
-        title="Réaffecter les produits de la zone"
-        description={reassignRoomMessage}
-        excludeRoomId={reassignRoomId ?? undefined}
+      <ArchiveDialog
+        open={!!archiveRoom}
+        onClose={() => setArchiveRoom(null)}
+        onConfirm={handleConfirmArchiveRoom}
+        onReassign={handleReassignRoom}
+        entityLabel="cette zone"
+        activeProductCount={archiveRoom?.activeProductCount ?? 0}
+        excludeRoomId={archiveRoom?.id}
+        isLoading={deleteRoomMutation.isPending || reassignRoomMutation.isPending}
       />
+
     </div>
   );
 }

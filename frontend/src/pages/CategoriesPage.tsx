@@ -7,6 +7,7 @@ import {
 } from "@/hooks/useCategories";
 import { useAuth } from "@/context/AuthContext";
 import CategoryDialog from "@/components/categories/CategoryDialog";
+import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Pencil, Trash2 } from "lucide-react";
@@ -25,6 +26,8 @@ export default function CategoriesPage() {
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmTargetId, setConfirmTargetId] = useState<string | null>(null);
 
   const handleCreate = () => {
     setEditingCategory(null);
@@ -37,12 +40,19 @@ export default function CategoriesPage() {
   };
 
   const handleDelete = (id: string) => {
-    if (window.confirm("Archiver cette catégorie ?")) {
-      deleteMutation.mutate(id, {
-        onSuccess: () => toast.success("Catégorie archivée"),
-        onError: (err) => toast.error(getErrorMessage(err)),
-      });
-    }
+    setConfirmTargetId(id);
+    setConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!confirmTargetId) return;
+    const id = confirmTargetId;
+    setConfirmOpen(false);
+    setConfirmTargetId(null);
+    deleteMutation.mutate(id, {
+      onSuccess: () => toast.success("Catégorie archivée"),
+      onError: (err) => toast.error(getErrorMessage(err)),
+    });
   };
 
   const handleSubmit = (data: { name: string; color: string }) => {
@@ -132,6 +142,15 @@ export default function CategoriesPage() {
         onSubmit={handleSubmit}
         category={editingCategory}
         isLoading={createMutation.isPending || updateMutation.isPending}
+      />
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onClose={() => { setConfirmOpen(false); setConfirmTargetId(null); }}
+        onConfirm={handleConfirmDelete}
+        title="Archiver cette catégorie ?"
+        description="Les produits liés conserveront leur catégorie mais elle n'apparaîtra plus dans les listes actives."
+        isLoading={deleteMutation.isPending}
       />
     </div>
   );

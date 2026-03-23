@@ -5,25 +5,42 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCategories } from "@/hooks/useCategories";
+import { useAllRooms } from "@/hooks/useRooms";
 import type { Product } from "@/types/api";
+
+export interface InitialStock {
+  toRoomId: string;
+  quantity: number;
+  reason?: string;
+}
 
 interface ProductDialogProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (data: {
-    name: string;
-    sku: string;
-    description?: string;
-    trackingType: "QUANTITY" | "UNIQUE";
-    categoryId?: string;
-    serialNumber?: string;
-    minQuantity?: number;
-    unit?: string;
-  }) => void;
+  onSubmit: (
+    data: {
+      name: string;
+      sku: string;
+      description?: string;
+      trackingType: "QUANTITY" | "UNIQUE";
+      categoryId?: string;
+      serialNumber?: string;
+      minQuantity?: number;
+      unit?: string;
+    },
+    initialStock?: InitialStock
+  ) => void;
   product?: Product | null;
   isLoading?: boolean;
 }
@@ -44,7 +61,13 @@ export default function ProductDialog({
   const [minQuantity, setMinQuantity] = useState("");
   const [unit, setUnit] = useState("");
 
+  // Stock initial (create mode only)
+  const [toRoomId, setToRoomId] = useState("");
+  const [initialQuantity, setInitialQuantity] = useState("1");
+  const [initialReason, setInitialReason] = useState("");
+
   const { data: categories } = useCategories();
+  const { data: rooms } = useAllRooms();
 
   useEffect(() => {
     if (product) {
@@ -66,11 +89,14 @@ export default function ProductDialog({
       setMinQuantity("");
       setUnit("");
     }
+    setToRoomId("");
+    setInitialQuantity("1");
+    setInitialReason("");
   }, [product, open]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit({
+    const productData = {
       name,
       sku,
       description: description || undefined,
@@ -79,7 +105,17 @@ export default function ProductDialog({
       serialNumber: trackingType === "UNIQUE" ? serialNumber || undefined : undefined,
       minQuantity: trackingType === "QUANTITY" && minQuantity ? parseInt(minQuantity) : undefined,
       unit: trackingType === "QUANTITY" ? unit || undefined : undefined,
-    });
+    };
+
+    const stock: InitialStock | undefined = toRoomId
+      ? {
+          toRoomId,
+          quantity: trackingType === "UNIQUE" ? 1 : parseInt(initialQuantity) || 1,
+          reason: initialReason || undefined,
+        }
+      : undefined;
+
+    onSubmit(productData, stock);
   };
 
   return (
@@ -156,7 +192,6 @@ export default function ProductDialog({
             </div>
           </div>
 
-          {/* Champs conditionnels selon le tracking type */}
           {trackingType === "UNIQUE" && (
             <div className="space-y-2">
               <Label htmlFor="serialNumber">Numéro de série</Label>
@@ -193,6 +228,64 @@ export default function ProductDialog({
                 />
               </div>
             </div>
+          )}
+
+          {/* Section stock initial — création uniquement */}
+          {!product && (
+            <>
+              <div className="border-t pt-4">
+                <p className="text-sm font-medium mb-3">
+                  Stock initial{" "}
+                  <span className="text-muted-foreground font-normal">(optionnel)</span>
+                </p>
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <Label>Zone de destination</Label>
+                    <Select value={toRoomId} onValueChange={setToRoomId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choisir une zone" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {rooms?.map((r) => (
+                          <SelectItem key={r.id} value={r.id}>
+                            {r.name}
+                            <span className="text-muted-foreground ml-1 text-xs">
+                              — {r.buildingName}
+                            </span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {toRoomId && trackingType === "QUANTITY" && (
+                    <div className="space-y-2">
+                      <Label htmlFor="initialQuantity">Quantité initiale</Label>
+                      <Input
+                        id="initialQuantity"
+                        type="number"
+                        min="1"
+                        value={initialQuantity}
+                        onChange={(e) => setInitialQuantity(e.target.value)}
+                        required
+                      />
+                    </div>
+                  )}
+
+                  {toRoomId && (
+                    <div className="space-y-2">
+                      <Label htmlFor="initialReason">Raison (optionnel)</Label>
+                      <Input
+                        id="initialReason"
+                        value={initialReason}
+                        onChange={(e) => setInitialReason(e.target.value)}
+                        placeholder="Livraison initiale, stock de départ..."
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
           )}
 
           <div className="flex justify-end gap-2">

@@ -19,6 +19,12 @@ public interface RoomRepository extends JpaRepository<Room, UUID> {
     // Rooms archivées d'un building
     List<Room> findByBuildingIdAndTenantIdAndDeletedAtIsNotNull(UUID buildingId, UUID tenantId);
 
+    // Toutes les rooms actives d'un tenant (toutes les buildings)
+    List<Room> findByTenantIdAndDeletedAtIsNull(UUID tenantId);
+
+    // Toutes les rooms archivées d'un tenant
+    List<Room> findByTenantIdAndDeletedAtIsNotNull(UUID tenantId);
+
     // Une room active par id et tenant
     Optional<Room> findByIdAndTenantIdAndDeletedAtIsNull(UUID id, UUID tenantId);
 }

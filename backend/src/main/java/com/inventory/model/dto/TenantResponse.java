@@ -3,13 +3,10 @@ package com.inventory.model.dto;
 import java.time.Instant;
 import java.util.UUID;
 
-public record RoomResponse(
+public record TenantResponse(
         UUID id,
-        UUID buildingId,
-        String buildingName,
         String name,
-        String description,
-        int activeProductCount,
+        String slug,
         Instant createdAt,
         Instant updatedAt
 ) {}

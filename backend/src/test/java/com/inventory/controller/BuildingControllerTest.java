@@ -52,7 +52,7 @@ class BuildingControllerTest {
     void setUp() {
         buildingId = UUID.randomUUID();
         mockBuilding = new BuildingResponse(
-                buildingId, "Entrepôt A", "10 rue Test", Instant.now(), Instant.now()
+                buildingId, "Entrepôt A", "10 rue Test", 0, Instant.now(), Instant.now()
         );
     }
 
@@ -73,7 +73,7 @@ class BuildingControllerTest {
     @WithMockUser
     void getAll_archived_authenticated_shouldReturn200() throws Exception {
         BuildingResponse archived = new BuildingResponse(
-                UUID.randomUUID(), "Entrepôt Archivé", "5 rue Ancienne", Instant.now(), Instant.now()
+                UUID.randomUUID(), "Entrepôt Archivé", "5 rue Ancienne", 0, Instant.now(), Instant.now()
         );
         when(buildingService.getAll(true)).thenReturn(List.of(archived));
 
@@ -191,7 +191,7 @@ class BuildingControllerTest {
     void update_asAdmin_shouldReturn200() throws Exception {
         BuildingRequest request = new BuildingRequest("Entrepôt Modifié", "2 rue Modifiée");
         BuildingResponse updated = new BuildingResponse(
-                buildingId, "Entrepôt Modifié", "2 rue Modifiée", Instant.now(), Instant.now()
+                buildingId, "Entrepôt Modifié", "2 rue Modifiée", 0, Instant.now(), Instant.now()
         );
         when(buildingService.update(eq(buildingId), any(BuildingRequest.class))).thenReturn(updated);
 

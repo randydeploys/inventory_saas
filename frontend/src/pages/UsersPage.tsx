@@ -7,6 +7,7 @@ import {
 } from "@/hooks/useUsers";
 import { useAuth } from "@/context/AuthContext";
 import UserDialog from "@/components/users/UserDialog";
+import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, UserX } from "lucide-react";
@@ -22,6 +23,8 @@ export default function UsersPage() {
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [formError, setFormError] = useState("");
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmTargetId, setConfirmTargetId] = useState<string | null>(null);
 
   const handleCreate = (data: {
     email: string;
@@ -51,12 +54,19 @@ export default function UsersPage() {
   };
 
   const handleDeactivate = (userId: string) => {
-    if (window.confirm("Désactiver cet utilisateur ?")) {
-      deactivateMutation.mutate(userId, {
-        onSuccess: () => toast.success("Utilisateur désactivé"),
-        onError: (err) => toast.error(getErrorMessage(err)),
-      });
-    }
+    setConfirmTargetId(userId);
+    setConfirmOpen(true);
+  };
+
+  const handleConfirmDeactivate = () => {
+    if (!confirmTargetId) return;
+    const userId = confirmTargetId;
+    setConfirmOpen(false);
+    setConfirmTargetId(null);
+    deactivateMutation.mutate(userId, {
+      onSuccess: () => toast.success("Utilisateur désactivé"),
+      onError: (err) => toast.error(getErrorMessage(err)),
+    });
   };
 
   const handleOpen = () => {
@@ -135,6 +145,16 @@ export default function UsersPage() {
         onSubmit={handleCreate}
         isLoading={createMutation.isPending}
         error={formError}
+      />
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onClose={() => { setConfirmOpen(false); setConfirmTargetId(null); }}
+        onConfirm={handleConfirmDeactivate}
+        title="Désactiver cet utilisateur ?"
+        description="L'utilisateur ne pourra plus se connecter. Cette action est réversible par un Admin."
+        confirmLabel="Désactiver"
+        isLoading={deactivateMutation.isPending}
       />
     </div>
   );

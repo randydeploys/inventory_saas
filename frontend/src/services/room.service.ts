@@ -7,6 +7,9 @@ export interface RoomRequest {
 }
 
 export const roomService = {
+  getAll: (archived = false) =>
+    api.get<ApiResponse<Room[]>>(`/api/rooms`, { params: { archived } }),
+
   getAllByBuilding: (buildingId: string, archived = false) =>
     api.get<ApiResponse<Room[]>>(`/api/buildings/${buildingId}/rooms`, {
       params: { archived },

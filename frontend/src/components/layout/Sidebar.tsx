@@ -10,6 +10,7 @@ import {
   Tags,
   LogOut,
   Users,
+  Settings,
 } from "lucide-react";
 
 const navItems = [
@@ -19,6 +20,7 @@ const navItems = [
   { to: "/products", label: "Produits", icon: Package, roles: ["ADMIN", "MANAGER", "READER"], showLowStock: true },
   { to: "/movements", label: "Mouvements", icon: ArrowLeftRight, roles: ["ADMIN", "MANAGER", "READER"] },
   { to: "/users", label: "Utilisateurs", icon: Users, roles: ["ADMIN"] },
+  { to: "/tenant", label: "Paramètres", icon: Settings, roles: ["ADMIN"] },
 ];
 
 export default function Sidebar() {

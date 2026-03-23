@@ -54,7 +54,7 @@ class RoomControllerTest {
         buildingId = UUID.randomUUID();
         roomId = UUID.randomUUID();
         mockRoom = new RoomResponse(
-                roomId, buildingId, "Zone A", "Stockage palettes", Instant.now(), Instant.now()
+                roomId, buildingId, "Bâtiment Test", "Zone A", "Stockage palettes", 0, Instant.now(), Instant.now()
         );
     }
 
@@ -75,7 +75,7 @@ class RoomControllerTest {
     @WithMockUser
     void getAllByBuilding_archived_shouldReturn200() throws Exception {
         RoomResponse archived = new RoomResponse(
-                UUID.randomUUID(), buildingId, "Zone Archivée", "Ancienne zone", Instant.now(), Instant.now()
+                UUID.randomUUID(), buildingId, "Bâtiment Test", "Zone Archivée", "Ancienne zone", 0, Instant.now(), Instant.now()
         );
         when(roomService.getAllByBuilding(buildingId, true)).thenReturn(List.of(archived));
 
@@ -207,7 +207,7 @@ class RoomControllerTest {
     void update_asAdmin_shouldReturn200() throws Exception {
         RoomRequest request = new RoomRequest("Zone Modifiée", "Nouvelle description");
         RoomResponse updated = new RoomResponse(
-                roomId, buildingId, "Zone Modifiée", "Nouvelle description", Instant.now(), Instant.now()
+                roomId, buildingId, "Bâtiment Test", "Zone Modifiée", "Nouvelle description", 0, Instant.now(), Instant.now()
         );
         when(roomService.update(eq(roomId), any(RoomRequest.class))).thenReturn(updated);
 
@@ -225,7 +225,7 @@ class RoomControllerTest {
     void update_asManager_shouldReturn200() throws Exception {
         RoomRequest request = new RoomRequest("Zone Modifiée", "Nouvelle description");
         RoomResponse updated = new RoomResponse(
-                roomId, buildingId, "Zone Modifiée", "Nouvelle description", Instant.now(), Instant.now()
+                roomId, buildingId, "Bâtiment Test", "Zone Modifiée", "Nouvelle description", 0, Instant.now(), Instant.now()
         );
         when(roomService.update(eq(roomId), any(RoomRequest.class))).thenReturn(updated);
 

@@ -2,6 +2,14 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { roomService } from "@/services/room.service";
 import type { RoomRequest } from "@/services/room.service";
 
+export function useAllRooms(archived = false) {
+  return useQuery({
+    queryKey: ["rooms", "all", { archived }],
+    queryFn: () =>
+      roomService.getAll(archived).then((res) => res.data.data),
+  });
+}
+
 export function useRooms(buildingId: string, archived = false) {
   return useQuery({
     queryKey: ["rooms", buildingId, { archived }],

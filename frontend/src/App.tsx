@@ -12,6 +12,7 @@ import MovementsPage from "./pages/MovementsPage";
 import { Toaster } from "sonner";
 import UsersPage from "./pages/UsersPage";
 import BuildingDetailPage from "./pages/BuildingDetailPage";
+import TenantPage from "./pages/TenantPage";
 
 const queryClient = new QueryClient();
 
@@ -64,6 +65,7 @@ function AppRoutes() {
         <Route path="/products" element={<ProductsPage />} />
         <Route path="/movements" element={<MovementsPage />} />
         <Route path="/users" element={<UsersPage />} />
+        <Route path="/tenant" element={<TenantPage />} />
         <Route path="/" element={<Navigate to="/buildings" />} />
       </Route>
     </Routes>

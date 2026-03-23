@@ -9,14 +9,19 @@ public final class BuildingMapper {
 
     private BuildingMapper() {}
 
-    public static BuildingResponse toResponse(Building building) {
+    public static BuildingResponse toResponse(Building building, long activeProductCount) {
         return new BuildingResponse(
                 building.getId(),
                 building.getName(),
                 building.getAddress(),
+                (int) activeProductCount,
                 building.getCreatedAt(),
                 building.getUpdatedAt()
         );
+    }
+
+    public static BuildingResponse toResponse(Building building) {
+        return toResponse(building, 0);
     }
 
     public static Building toEntity(BuildingRequest request, Tenant tenant) {

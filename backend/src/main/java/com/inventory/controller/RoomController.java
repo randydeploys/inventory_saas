@@ -23,6 +23,14 @@ public class RoomController {
         this.roomService = roomService;
     }
 
+    @GetMapping("/rooms")
+    public ResponseEntity<ApiResponse<List<RoomResponse>>> getAll(
+            @RequestParam(defaultValue = "false") boolean archived
+    ) {
+        List<RoomResponse> rooms = roomService.getAll(archived);
+        return ResponseEntity.ok(ApiResponse.success("Zones récupérées", rooms));
+    }
+
     @GetMapping("/buildings/{buildingId}/rooms")
     public ResponseEntity<ApiResponse<List<RoomResponse>>> getAllByBuilding(
             @PathVariable UUID buildingId,
