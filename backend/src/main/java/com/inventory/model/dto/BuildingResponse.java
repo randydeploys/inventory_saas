@@ -7,6 +7,7 @@ public record BuildingResponse(
         UUID id,
         String name,
         String address,
+        int activeProductCount,
         Instant createdAt,
         Instant updatedAt
 ) {}

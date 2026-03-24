@@ -1,5 +1,6 @@
 package com.inventory.service;
 
+import com.inventory.exception.ConflictException;
 import com.inventory.exception.ResourceNotFoundException;
 import com.inventory.mapper.RoomMapper;
 import com.inventory.model.dto.RoomRequest;
@@ -9,6 +10,7 @@ import com.inventory.model.entity.Room;
 import com.inventory.model.entity.Tenant;
 import com.inventory.model.entity.User;
 import com.inventory.repository.BuildingRepository;
+import com.inventory.repository.ProductStockRepository;
 import com.inventory.repository.RoomRepository;
 import com.inventory.repository.TenantRepository;
 import com.inventory.repository.UserRepository;
@@ -27,6 +29,7 @@ public class RoomService {
     private final BuildingRepository buildingRepository;
     private final TenantRepository tenantRepository;
     private final UserRepository userRepository;
+    private final ProductStockRepository productStockRepository;
     private final SecurityHelper securityHelper;
 
     public RoomService(
@@ -34,13 +37,27 @@ public class RoomService {
             BuildingRepository buildingRepository,
             TenantRepository tenantRepository,
             UserRepository userRepository,
+            ProductStockRepository productStockRepository,
             SecurityHelper securityHelper
     ) {
         this.roomRepository = roomRepository;
         this.buildingRepository = buildingRepository;
         this.tenantRepository = tenantRepository;
         this.userRepository = userRepository;
+        this.productStockRepository = productStockRepository;
         this.securityHelper = securityHelper;
+    }
+
+    public List<RoomResponse> getAll(boolean archived) {
+        UUID tenantId = securityHelper.getCurrentTenantId();
+
+        List<Room> rooms = archived
+                ? roomRepository.findByTenantIdAndDeletedAtIsNotNull(tenantId)
+                : roomRepository.findByTenantIdAndDeletedAtIsNull(tenantId);
+
+        return rooms.stream()
+                .map(r -> RoomMapper.toResponse(r, productStockRepository.countByRoomId(r.getId())))
+                .toList();
     }
 
     public List<RoomResponse> getAllByBuilding(UUID buildingId, boolean archived) {
@@ -51,7 +68,7 @@ public class RoomService {
                 : roomRepository.findByBuildingIdAndTenantIdAndDeletedAtIsNull(buildingId, tenantId);
 
         return rooms.stream()
-                .map(RoomMapper::toResponse)
+                .map(r -> RoomMapper.toResponse(r, productStockRepository.countByRoomId(r.getId())))
                 .toList();
     }
 
@@ -62,7 +79,7 @@ public class RoomService {
                 .findByIdAndTenantIdAndDeletedAtIsNull(id, tenantId)
                 .orElseThrow(() -> new ResourceNotFoundException("Zone introuvable"));
 
-        return RoomMapper.toResponse(room);
+        return RoomMapper.toResponse(room, productStockRepository.countByRoomId(id));
     }
 
     @Transactional
@@ -109,7 +126,13 @@ public class RoomService {
                 .findByIdAndTenantIdAndDeletedAtIsNull(id, tenantId)
                 .orElseThrow(() -> new ResourceNotFoundException("Zone introuvable"));
 
-        // TODO: vérifier si des produits actifs existent (quand ProductStock sera créé)
+        long activeStockCount = productStockRepository.countByRoomId(id);
+        if (activeStockCount > 0) {
+            throw new ConflictException(
+                    "Cette zone contient " + activeStockCount + " produit(s) actif(s). " +
+                    "Utilisez la réaffectation pour déplacer les produits avant d'archiver."
+            );
+        }
 
         room.setDeletedAt(Instant.now());
         roomRepository.save(room);

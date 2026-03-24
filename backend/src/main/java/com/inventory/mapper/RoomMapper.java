@@ -10,15 +10,21 @@ public final class RoomMapper {
 
     private RoomMapper() {}
 
-    public static RoomResponse toResponse(Room room) {
+    public static RoomResponse toResponse(Room room, long activeProductCount) {
         return new RoomResponse(
                 room.getId(),
                 room.getBuilding().getId(),
+                room.getBuilding().getName(),
                 room.getName(),
                 room.getDescription(),
+                (int) activeProductCount,
                 room.getCreatedAt(),
                 room.getUpdatedAt()
         );
+    }
+
+    public static RoomResponse toResponse(Room room) {
+        return toResponse(room, 0);
     }
 
     public static Room toEntity(RoomRequest request, Building building, Tenant tenant) {
